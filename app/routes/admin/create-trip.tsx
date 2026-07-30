@@ -11,15 +11,45 @@ import {account} from "~/appwrite/client";
 import {useNavigate} from "react-router";
 
 export const loader = async () => {
-    const response = await fetch('https://restcountries.com/v3.1/all');
-    const data = await response.json();
+    try {
+        const response = await fetch('https://restcountries.com/v3.1/all');
+        const data = await response.json();
 
-    return data.map((country: any) => ({
-        name: country.flag + country.name.common,
-        coordinates: country.latlng,
-        value: country.name.common,
-        openStreetMap: country.maps?.openStreetMap,
-    }))
+        if (!Array.isArray(data)) {
+            console.error("Expected an array of countries, but received:", data);
+            return [
+                { name: "🇺🇸 United States", coordinates: [38.0, -97.0], value: "United States" },
+                { name: "🇮🇳 India", coordinates: [20.0, 77.0], value: "India" },
+                { name: "🇫🇷 France", coordinates: [46.0, 2.0], value: "France" },
+                { name: "🇯🇵 Japan", coordinates: [36.0, 138.0], value: "Japan" },
+                { name: "🇮🇹 Italy", coordinates: [42.83333333, 12.83333333], value: "Italy" },
+                { name: "🇬🇧 United Kingdom", coordinates: [54.0, -2.0], value: "United Kingdom" },
+                { name: "🇦🇺 Australia", coordinates: [-27.0, 133.0], value: "Australia" },
+                { name: "🇧🇷 Brazil", coordinates: [-10.0, -55.0], value: "Brazil" },
+                { name: "🇿🇦 South Africa", coordinates: [-29.0, 24.0], value: "South Africa" }
+            ];
+        }
+
+        return data.map((country: any) => ({
+            name: country.flag ? country.flag + " " + country.name.common : country.name.common,
+            coordinates: country.latlng,
+            value: country.name.common,
+            openStreetMap: country.maps?.openStreetMap,
+        }))
+    } catch (e) {
+        console.error("Failed to fetch countries:", e);
+        return [
+            { name: "🇺🇸 United States", coordinates: [38.0, -97.0], value: "United States" },
+            { name: "🇮🇳 India", coordinates: [20.0, 77.0], value: "India" },
+            { name: "🇫🇷 France", coordinates: [46.0, 2.0], value: "France" },
+            { name: "🇯🇵 Japan", coordinates: [36.0, 138.0], value: "Japan" },
+            { name: "🇮🇹 Italy", coordinates: [42.83333333, 12.83333333], value: "Italy" },
+            { name: "🇬🇧 United Kingdom", coordinates: [54.0, -2.0], value: "United Kingdom" },
+            { name: "🇦🇺 Australia", coordinates: [-27.0, 133.0], value: "Australia" },
+            { name: "🇧🇷 Brazil", coordinates: [-10.0, -55.0], value: "Brazil" },
+            { name: "🇿🇦 South Africa", coordinates: [-29.0, 24.0], value: "South Africa" }
+        ];
+    }
 }
 
 const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
@@ -65,7 +95,7 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
            return;
        }
 
-       try {
+        try {
            const response = await fetch('/api/create-trip', {
                method: 'POST',
                headers: { 'Content-Type': 'application/json'},
@@ -80,11 +110,15 @@ const CreateTrip = ({ loaderData }: Route.ComponentProps ) => {
                })
            })
 
-           const result: CreateTripResponse = await response.json();
+           const result = await response.json();
 
-           if(result?.id) navigate(`/trips/${result.id}`)
-           else console.error('Failed to generate a trip')
-       } catch (e) {
+           if(result?.id) {
+               navigate(`/trips/${result.id}`);
+           } else {
+               setError(result?.error || 'Failed to generate a trip');
+           }
+       } catch (e: any) {
+           setError(e.message || 'An unexpected error occurred');
            console.error('Error generating trip', e);
        } finally {
            setLoading(false)

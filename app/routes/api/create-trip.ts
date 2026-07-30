@@ -112,7 +112,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         )
 
         return data({ id: result.$id })
-    } catch (e) {
+    } catch (e: any) {
         console.error('Error generating travel plan: ', e);
+        return new Response(
+            JSON.stringify({ error: e.message || 'Failed to generate travel plan' }), 
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
     }
 }
